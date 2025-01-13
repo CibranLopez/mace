@@ -1,15 +1,17 @@
 import numpy  as np
 import pandas as pd
-import matgl
 import warnings
 import os
 
-from sklearn.model_selection     import train_test_split
 from pymatgen.io.vasp.outputs    import Vasprun
-from pymatgen.io.vasp.inputs     import Poscar
 from pymatgen.core               import Structure
-from matgl.ext.ase               import M3GNetCalculator, Relaxer
-from pymatgen.io.ase             import AseAtomsAdaptor
+from mace.calculators            import mace_mp
+from ase.md                      import Langevin
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from ase                         import units
+from ase.io.vasp                 import read_vasp, write_vasp
+from ase.optimize                import BFGS
+from ase.constraints             import ExpCellFilter
 
 # To suppress warnings for clearer output
 warnings.simplefilter('ignore')
@@ -55,31 +57,6 @@ def clean_vasprun(path_to_relaxation):
                         file.write(line)
             else:
                 file.write(line)
-
-
-def split_data(data, test_size=0.2, validation_size=0.2, random_state=None):
-    """
-    Split a Pandas DataFrame into training, validation, and test sets.
-
-    Args:
-        data (DataFrame): The input dataset to be split.
-        test_size (float): The proportion of data to include in the test set (default: 0.2).
-        validation_size (float): The proportion of data to include in the validation set (default: 0.2).
-        random_state (int or None): Seed for the random number generator (default: None).
-
-    Returns:
-        train_set (DataFrame): The training dataset.
-        validation_set (DataFrame): The validation dataset.
-        test_set (DataFrame): The test dataset.
-    """
-    
-    # First, split the data into training and temporary data (temporary_data = validation + test)
-    train_data, temp_data = train_test_split(data, test_size=(validation_size + test_size), random_state=random_state)
-
-    # Next, split the temporary data into validation and test data
-    validation_data, test_data = train_test_split(temp_data, test_size=(test_size / (validation_size + test_size)), random_state=random_state)
-
-    return train_data, validation_data, test_data
 
 
 def extract_vaspruns_GdCeO2(path_to_dataset, ionic_steps_to_skip=0):
@@ -558,7 +535,9 @@ def structural_relaxation(
         device='cuda',
         dispersion=False,
         relax_cell=True,
-        fmax=0.05):
+        fmax=0.05,
+        output_folder='./'
+):
     """
         Perform structural relaxation of a molecular or crystalline structure.
 
@@ -595,13 +574,17 @@ def structural_relaxation(
         atoms = ExpCellFilter(atoms)
 
     # Relax the structure
-    dyn = BFGS(atoms, trajectory=f'{path_to_structure}/run.traj')
+    dyn = BFGS(atoms, trajectory=f'{output_folder}/run.traj')
     dyn.run(fmax=fmax)
-    write_vasp(filename=f'{path_to_structure}/CONTCAR', atoms=atoms, direct=True)
+
+    if relax_cell:
+        atoms = atoms.atoms
+
+    write_vasp(f'{output_folder}/CONTCAR', atoms=atoms, direct=True, sort=True)
     return atoms
 
 
-def single_shot_energy_calculations(
+def single_shot_energy_calculation(
         path_to_structure,
         model_load_path='large',
         device='cuda',
@@ -650,10 +633,11 @@ def molecular_dynamics(
         model_load_path='large',
         device='cuda',
         dispersion=False,
-        T_init=300,
-        time_step=1,
+        temperature=300,
+        timestep=1,
         friction=0.001,
-        n_steps=200
+        n_steps=200,
+        output_folder='./'
 ):
     """
     Conducts a molecular dynamics simulation on a given atomic structure using a pre-trained model
@@ -667,7 +651,7 @@ def molecular_dynamics(
         dispersion (bool, optional): Specifies whether to include dispersion corrections in the model.
             Defaults to False.
         T_init (float, optional): Initial temperature in Kelvin. Defaults to 300.
-        time_step (float, optional): Timestep for the dynamics in femtoseconds. Defaults to 1.
+        timestep (float, optional): Timestep for the dynamics in femtoseconds. Defaults to 1.
         friction (float, optional): Friction coefficient for Langevin dynamics. Defaults to 0.001.
         n_steps (int, optional): Number of simulation steps. Defaults to 200.
 
@@ -682,9 +666,18 @@ def molecular_dynamics(
     atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float32')
     # macemp = mace_mp() # return a model with D3 dispersion correction
 
-    # Initialize velocities.
-    MaxwellBoltzmannDistribution(atoms, T_init * units.kB)
+    # Set units
+    timestep    *= units.fs
+    temperature *= units.kB
+    friction    *= 1/units.fs
 
-    # Set up the Langevin dynamics engine for NVT ensemble.
-    dyn = Langevin(atoms, time_step * units.fs, T_init * units.kB, friction)
+    # Initialize velocities.
+    MaxwellBoltzmannDistribution(atoms, temperature)
+
+    # Set up the Langevin dynamics engine for NVT ensemble
+    dyn = Langevin(atoms, timestep=timestep, temperature=temperature, friction=friction, trajectory=f'{output_folder}/run.traj')
     dyn.run(n_steps)
+
+    write_vasp(f'{output_folder}/CONTCAR', atoms=atoms, direct=True, sort=True)
+    return atoms
+
