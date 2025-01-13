@@ -19,5 +19,5 @@ mace_run_train \
     --ema_decay=0.99 \
     --amsgrad \
     --default_dtype="float64" \
-    --device=cuda \
-    --seed=1
+    --device=cuda  \
+    --seed=0
