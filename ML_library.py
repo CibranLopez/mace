@@ -189,7 +189,7 @@ def extract_vaspruns_GdCeO2(path_to_dataset, ionic_steps_to_skip=0):
 
 
 def extract_vaspruns_dataset(path_to_dataset, energy_threshold=None, ionic_steps_to_skip=1):
-    """Generates a Pandas DataFrame with the data from each simulation in the path.
+    """Generates a xyz file database from each simulation in the path.
     
    Args:
         path_to_dataset  (str):         Path to tree database containing different level of theory calculations.
