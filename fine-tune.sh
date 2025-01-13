@@ -1,0 +1,23 @@
+mace_run_train \
+    --name="MACE" \
+    --foundation_model="mace-mpa-0-medium.model" \
+    --multiheads_finetuning=False \
+    --train_file="data/train.xyz" \
+    --valid_fraction=0.05 \
+    --test_file="data/test.xyz" \
+    --compute_stress=True \
+    --stress_key='stress' \
+    --energy_weight=1.0 \
+    --forces_weight=1.0 \
+    --stress_weight=1.0 \
+    --E0s="average" \
+    --lr=0.005 \
+    --scaling="rms_forces_scaling" \
+    --batch_size=2 \
+    --max_num_epochs=200 \
+    --ema \
+    --ema_decay=0.99 \
+    --amsgrad \
+    --default_dtype="float64" \
+    --device=cuda \
+    --seed=1
