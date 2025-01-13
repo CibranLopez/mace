@@ -547,16 +547,11 @@ def structural_relaxation(
         structure is saved to a specified output directory.
 
         Parameters:
-            path_to_structure (str): Path to the file containing the structure in VASP format.
-                This file serves as the input to the relaxation process.
-
-            model_load_path (str): Path to the pre-trained model to be used for structural
-                relaxation. This model drives the calculation of forces and energies.
-
-            relax_cell (bool): A boolean value indicating whether to relax the simulation cell
+            path_to_structure (str):   Path to the file containing the structure in VASP format.
+            model_load_path   (str):   Path to the pre-trained model.
+            relax_cell        (bool):  A boolean value indicating whether to relax the simulation cell
                 along with atomic positions. Defaults to True.
-
-            fmax (float): Maximum force tolerance in eV/Å for stopping the relaxation process.
+            fmax              (float): Maximum force tolerance in eV/Å for stopping the relaxation process.
                 Defaults to 0.05.
 
         Returns:
@@ -567,9 +562,9 @@ def structural_relaxation(
     atoms = read_vasp(file=path_to_structure)
 
     # Load the pre-trained model
-    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float32')
+    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float64')
 
-    # Check wether to relax the cell
+    # Check whether to relax the cell
     if relax_cell:
         atoms = ExpCellFilter(atoms)
 
@@ -597,20 +592,20 @@ def single_shot_energy_calculation(
     and computes the potential energy, atomic forces, and stress tensor for the given molecular configuration.
 
     Parameters:
-        path_to_structure (str): Path to the file containing the molecular structure
+        path_to_structure (str):  Path to the file containing the molecular structure
             in VASP format.
-        model_load_path (str): Path to the pre-trained MACE model file. Default is the 'large' model.
-        device (str): Device to run the computations on, e.g., 'cuda' for GPU or
+        model_load_path   (str):  Path to the pre-trained MACE model file. Default is the 'large' model.
+        device            (str):  Device to run the computations on, e.g., 'cuda' for GPU or
             'cpu' for CPU. Default is 'cuda'.
-        dispersion (bool): Whether to include the D3 dispersion correction in the model.
+        dispersion        (bool): Whether to include the D3 dispersion correction in the model.
 
     Returns:
-        float: The computed potential energy of the molecular structure.
+        float:         The computed potential energy of the molecular structure.
         numpy.ndarray: The computed forces on every atom in the molecular structure.
         numpy.ndarray: The computed stress tensor of the molecular structure.
 
     Raises:
-        ValueError: If the molecular structure file is invalid or cannot be read.
+        ValueError:   If the molecular structure file is invalid or cannot be read.
         RuntimeError: If the MACE model fails to run the computations due to an
             incompatible model or device.
     """
@@ -619,7 +614,7 @@ def single_shot_energy_calculation(
     atoms = read_vasp(file=path_to_structure)
 
     # Load the pre-trained model
-    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float32')
+    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float64')
 
     # Determine energy
     energy = atoms.get_potential_energy()
@@ -645,15 +640,15 @@ def molecular_dynamics(
     distribution, applies the provided force field, and evolves the system for a specified number of steps.
 
     Parameters:
-        path_to_structure (str): Path to the input atomic structure file in VASP format.
-        model_load_path (str, optional): Path or identifier to load the pre-trained model. Defaults to 'large'.
-        device (str, optional): Device used for computation, e.g., 'cuda' or 'cpu'. Defaults to 'cuda'.
-        dispersion (bool, optional): Specifies whether to include dispersion corrections in the model.
+        path_to_structure (str):            Path to the input atomic structure file in VASP format.
+        model_load_path   (str, optional):  Path or identifier to load the pre-trained model. Defaults to 'large'.
+        device            (str, optional):  Device used for computation, e.g., 'cuda' or 'cpu'. Defaults to 'cuda'.
+        dispersion        (bool, optional): Specifies whether to include dispersion corrections in the model.
             Defaults to False.
-        T_init (float, optional): Initial temperature in Kelvin. Defaults to 300.
-        timestep (float, optional): Timestep for the dynamics in femtoseconds. Defaults to 1.
-        friction (float, optional): Friction coefficient for Langevin dynamics. Defaults to 0.001.
-        n_steps (int, optional): Number of simulation steps. Defaults to 200.
+        temperature       (float, optional): Initial temperature in Kelvin. Defaults to 300.
+        timestep          (float, optional): Timestep for the dynamics in femtoseconds. Defaults to 1.
+        friction          (float, optional): Friction coefficient for Langevin dynamics. Defaults to 0.001.
+        n_steps           (int, optional):   Number of simulation steps. Defaults to 200.
 
     Raises:
         Various exceptions may occur during file reading, model initialization, or dynamics execution.
@@ -663,8 +658,7 @@ def molecular_dynamics(
     atoms = read_vasp(file=path_to_structure)
 
     # Load the pre-trained model
-    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float32')
-    # macemp = mace_mp() # return a model with D3 dispersion correction
+    atoms.calc = mace_mp(model=model_load_path, device=device, dispersion=dispersion, default_dtype='float64')
 
     # Set units
     timestep    *= units.fs
@@ -680,4 +674,3 @@ def molecular_dynamics(
 
     write_vasp(f'{output_folder}/CONTCAR', atoms=atoms, direct=True, sort=True)
     return atoms
-

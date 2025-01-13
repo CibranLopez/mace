@@ -1,3 +1,5 @@
 mace-torch
 ase
 numpy
+mace
+pymatgen
