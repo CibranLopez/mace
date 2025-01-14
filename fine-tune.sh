@@ -7,9 +7,9 @@ mace_run_train \
     --test_file="data/GdCeO2/test/file.xyz" \
     --compute_stress=True \
     --stress_key='stress' \
-    --energy_weight=1.0 \
-    --forces_weight=1.0 \
-    --stress_weight=1.0 \
+    --energy_weight=1 \
+    --forces_weight=10 \
+    --stress_weight=100 \
     --E0s="average" \
     --lr=0.005 \
     --scaling="rms_forces_scaling" \

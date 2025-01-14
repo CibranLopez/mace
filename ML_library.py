@@ -227,12 +227,17 @@ def extract_vaspruns_dataset(path_to_dataset, energy_threshold=None, ionic_steps
                     energy    = ionic_step['e_fr_energy']
                     forces    = ionic_step['forces']
                     stress    = ionic_step['stress']
+                    
+                    # Stresses obtained from VASP calculations, default unit is kBar, to eV/A^3
+                    # https://github.com/ACEsuit/mace/discussions/542
+                    stress = np.array(stress)
+                    stress = stress / 1602
 
                     # Write the number of atoms
                     file.write(f"{len(structure)}\n")
 
                     lattice    = ' '.join(map(str, structure.lattice.matrix.flatten()))
-                    stress_str = ' '.join(map(str, np.array(stress).flatten()))
+                    stress_str = ' '.join(map(str, stress.flatten()))
 
                     # Write the metadata
                     file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} stress=\"{stress_str}\" pbc=\"T T T\"\n")
