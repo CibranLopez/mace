@@ -5,8 +5,11 @@ mace_run_train \
     --train_file="data/GdCeO2/train/file.xyz" \
     --valid_fraction=0.1 \
     --test_file="data/GdCeO2/test/file.xyz" \
+    --compute_stress=True \
+    --stress_key='stress' \
     --energy_weight=1 \
     --forces_weight=10 \
+    --stress_weight=100 \
     --E0s="average" \
     --lr=0.005 \
     --scaling="rms_forces_scaling" \

@@ -6,10 +6,11 @@ import os
 from pymatgen.io.vasp.outputs    import Vasprun
 from pymatgen.core               import Structure
 from mace.calculators            import mace_mp
+from ase                         import units
 from ase.md                      import Langevin
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
-from ase                         import units
-from ase.io.vasp                 import read_vasp, write_vasp
+from ase.io.vasp                 import read_vasp, write_vasp, write_vasp_xdatcar
+from ase.io.trajectory           import Trajectory
 from ase.optimize                import BFGS
 from ase.constraints             import ExpCellFilter
 
@@ -188,7 +189,7 @@ def extract_vaspruns_GdCeO2(path_to_dataset, ionic_steps_to_skip=0):
     return m3gnet_dataset
 
 
-def extract_vaspruns_dataset(path_to_dataset, energy_threshold=None, ionic_steps_to_skip=1):
+def extract_vaspruns_dataset(path_to_dataset, load_stresses=False, energy_threshold=None, ionic_steps_to_skip=1):
     """Generates a xyz file database from each simulation in the path.
     
    Args:
@@ -226,21 +227,26 @@ def extract_vaspruns_dataset(path_to_dataset, energy_threshold=None, ionic_steps
                     structure = ionic_step['structure']
                     energy    = ionic_step['e_fr_energy']
                     forces    = ionic_step['forces']
-                    stress    = ionic_step['stress']
+                    #stress    = ionic_step['stress']
                     
-                    # Stresses obtained from VASP calculations, default unit is kBar, to eV/A^3
-                    # https://github.com/ACEsuit/mace/discussions/542
-                    stress = np.array(stress)
-                    stress = stress / 1602
+                    if load_stresses:
+                        # Stresses obtained from VASP calculations, default unit is kBar, to eV/A^3
+                        # https://github.com/ACEsuit/mace/discussions/542
+                        stress = np.array(stress)
+                        stress = stress / 1602
 
                     # Write the number of atoms
                     file.write(f"{len(structure)}\n")
 
                     lattice    = ' '.join(map(str, structure.lattice.matrix.flatten()))
-                    stress_str = ' '.join(map(str, stress.flatten()))
+                    if load_stresses:
+                        stress_str = ' '.join(map(str, stress.flatten()))
 
                     # Write the metadata
-                    file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} stress=\"{stress_str}\" pbc=\"T T T\"\n")
+                    if load_stresses:
+                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} stress=\"{stress_str}\" pbc=\"T T T\"\n")
+                    else:
+                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} pbc=\"T T T\"\n")
 
                     # Write atom data
                     for idx, _ in enumerate(structure):
@@ -676,6 +682,14 @@ def molecular_dynamics(
     # Set up the Langevin dynamics engine for NVT ensemble
     dyn = Langevin(atoms, timestep=timestep, temperature=temperature, friction=friction, trajectory=f'{output_folder}/run.traj')
     dyn.run(n_steps)
-
+    
+    traj_to_XDATCAR(output_folder)
     write_vasp(f'{output_folder}/CONTCAR', atoms=atoms, direct=True, sort=True)
     return atoms
+
+
+def traj_to_XDATCAR(path_to_simulation='./', traj_name='run.traj'):
+    traj = Trajectory(f'{path_to_simulation}/{traj_name}')
+    
+    write_vasp_xdatcar(f'{path_to_simulation}/XDATCAR', traj)
+
