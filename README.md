@@ -4,4 +4,9 @@ mll.extract_vaspruns_dataset('/home/claudio/cibran/Work/UCL/mace/data/GdCeO2/tes
 
 Logo para correr:
 
-mll.molecular_dynamics(path_to_structure='/home/cibran/Desktop/GdCeO2-MLMD/x-0.9375/2500K/conf7/POSCAR', output_folder='/home/cibran/Desktop/GdCeO2-MLMD/x-0.9375/2500K/conf7', temperature=2500, model_load_path='GdCeO2.model', n_steps=80000)
+mll.molecular_dynamics(path_to_structure='/home/claudio/Desktop/comparison-finetuning/foundational-model/POSCAR', output_folder='/home/claudio/Desktop/comparison-finetuning/foundational-model', temperature=1500, model_load_path='mace-mpa-0-medium.model', n_steps=80000)
+
+
+for dirpath, dirnames, filenames in os.walk('/home/claudio/Desktop/GdCeO2-MLMD-poscars'):
+    if "POSCAR" in filenames:
+        mll.molecular_dynamics(path_to_structure=f'{folder}/POSCAR', output_folder=folder, temperature=1500, model_load_path='mace-mpa-0-medium.model', n_steps=80000)

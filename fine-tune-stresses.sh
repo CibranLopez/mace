@@ -1,20 +1,21 @@
 mace_run_train \
     --name="MACE" \
     --foundation_model="mace-mpa-0-medium.model" \
-    --multiheads_finetuning=False \
+    --multiheads_finetuning=True \
     --train_file="data/GdCeO2/train/file.xyz" \
     --valid_fraction=0.1 \
     --test_file="data/GdCeO2/test/file.xyz" \
     --compute_stress=True \
     --stress_key='stress' \
+    --energy_key="REF_energy" \
     --energy_weight=1 \
     --forces_weight=10 \
-    --stress_weight=100 \
-    --E0s="average" \
-    --lr=0.005 \
+    --stress_weight=10 \
+    --E0s="foundation" \
+    --lr=0.0001 \
     --scaling="rms_forces_scaling" \
-    --batch_size=2 \
-    --max_num_epochs=10 \
+    --batch_size=1 \
+    --max_num_epochs=20 \
     --ema \
     --ema_decay=0.99 \
     --amsgrad \

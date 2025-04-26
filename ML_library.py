@@ -244,9 +244,9 @@ def extract_vaspruns_dataset(path_to_dataset, load_stresses=False, energy_thresh
 
                     # Write the metadata
                     if load_stresses:
-                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} stress=\"{stress_str}\" pbc=\"T T T\"\n")
+                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 REF_energy={energy} stress=\"{stress_str}\" pbc=\"T T T\"\n")
                     else:
-                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 energy={energy} pbc=\"T T T\"\n")
+                        file.write(f"Lattice=\"{lattice}\" Properties=species:S:1:pos:R:3:forces:R:3 REF_energy={energy} pbc=\"T T T\"\n")
 
                     # Write atom data
                     for idx, _ in enumerate(structure):
